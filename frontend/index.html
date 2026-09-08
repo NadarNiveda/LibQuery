@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LibQuery — Ask your library database</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="catalog-tab">LIBQUERY · CARD No. 001</div>
+
+  <header class="site-header">
+    <h1>LibQuery</h1>
+    <p class="subtitle">Ask your library database a question in plain English. LibQuery turns it into SQL, runs it, and shows you the answer.</p>
+  </header>
+
+  <main class="ledger">
+
+    <!-- QUESTION PANEL -->
+    <section class="card" id="question-card">
+      <div class="card-label">Ask a Question</div>
+      <textarea
+        id="question-input"
+        placeholder="e.g. Show all available books, or List members who currently have overdue books"
+        rows="3"
+      ></textarea>
+      <div class="actions">
+        <button id="generate-btn">Generate Query</button>
+        <span id="loading-indicator" class="hidden">Thinking…</span>
+      </div>
+    </section>
+
+    <!-- ERROR PANEL -->
+    <section class="card error-card hidden" id="error-card">
+      <div class="card-label">Something Went Wrong</div>
+      <p id="error-message"></p>
+    </section>
+
+    <!-- SQL PANEL -->
+    <section class="card hidden" id="sql-card">
+      <div class="card-label">Generated SQL</div>
+      <pre id="sql-output"></pre>
+    </section>
+
+    <!-- EXPLANATION PANEL -->
+    <section class="card hidden" id="explanation-card">
+      <div class="card-label">Explanation</div>
+      <p id="explanation-output"></p>
+    </section>
+
+    <!-- RESULTS PANEL -->
+    <section class="card hidden" id="results-card">
+      <div class="card-label">Query Result</div>
+      <div id="results-meta"></div>
+      <div class="table-wrap">
+        <table id="results-table">
+          <thead id="results-thead"></thead>
+          <tbody id="results-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>LibQuery — MCA Academic Project · Natural Language to SQL using Llama 3.2 (Ollama) · FastAPI · MySQL</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

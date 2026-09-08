@@ -1,0 +1,242 @@
+/* =====================================================================
+   LibQuery — Stylesheet
+   Design concept: a library card-catalog ledger.
+   Parchment background, brass rules, ink-navy headings, a monospace
+   "typewriter" voice for SQL — evoking a physical library index card.
+===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --ink: #1F2E4A;
+  --ink-soft: #3B4A68;
+  --parchment: #F3ECDD;
+  --card: #FFFDF8;
+  --brass: #A9762F;
+  --brass-dark: #8A5F22;
+  --line: #DDD2B8;
+  --text: #2A2620;
+  --text-muted: #6B6355;
+  --error: #9C3D3D;
+  --error-bg: #F7E9E5;
+  --success: #5B7553;
+
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--parchment);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 42px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  padding-bottom: 60px;
+}
+
+/* Small catalog-card tab, top-left, like a library index card label */
+.catalog-tab {
+  display: inline-block;
+  margin: 24px 0 0 24px;
+  padding: 4px 12px;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+.site-header {
+  max-width: 760px;
+  margin: 18px auto 8px;
+  padding: 0 24px;
+}
+
+.site-header h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 2.6rem;
+  color: var(--ink);
+  margin: 0 0 6px 0;
+  border-bottom: 3px solid var(--brass);
+  display: inline-block;
+  padding-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 56ch;
+  margin-top: 12px;
+}
+
+.ledger {
+  max-width: 760px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* --- Card / index-card panel --- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brass);
+  padding: 20px 22px;
+  box-shadow: 0 1px 2px rgba(31, 46, 74, 0.06);
+}
+
+.card-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--brass-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.hidden { display: none !important; }
+
+/* --- Question input --- */
+textarea {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--text);
+  background: #FFFFFF;
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 70px;
+}
+
+textarea:focus {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.actions {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+button#generate-btn {
+  background: var(--ink);
+  color: var(--parchment);
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 11px 22px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+button#generate-btn:hover { background: var(--ink-soft); }
+button#generate-btn:disabled { background: #9AA3B5; cursor: not-allowed; }
+
+#loading-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* --- SQL output --- */
+pre#sql-output {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  background: var(--ink);
+  color: #E9E4D6;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+/* --- Explanation --- */
+#explanation-output {
+  margin: 0;
+  color: var(--text);
+}
+
+/* --- Results table --- */
+#results-meta {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.table-wrap { overflow-x: auto; }
+
+table#results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+table#results-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: #EFE7D3;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--brass);
+  white-space: nowrap;
+}
+
+table#results-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+table#results-table tr:hover td {
+  background: #FBF7EC;
+}
+
+/* --- Error card --- */
+.error-card {
+  border-left-color: var(--error);
+  background: var(--error-bg);
+}
+
+.error-card .card-label { color: var(--error); }
+
+#error-message {
+  margin: 0;
+  color: var(--error);
+  font-family: var(--font-sans);
+}
+
+/* --- Footer --- */
+.site-footer {
+  max-width: 760px;
+  margin: 40px auto 0;
+  padding: 16px 24px 0;
+  border-top: 1px dashed var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .site-header h1 { font-size: 2rem; }
+  .card { padding: 16px; }
+}
