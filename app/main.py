@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db, run_select_query, check_database_connection
-from ollama_client import ask_llama, OllamaConnectionError, OllamaModelError
+from ollama_client import ask_llama, summarize_data, OllamaConnectionError, OllamaModelError
 from sql_validator import validate_sql
 
 # ---------------------------------------------------------------------------
@@ -94,12 +94,10 @@ def process_query(request: QuestionRequest, db: Session = Depends(get_db)):
         # Covers: Llama 3.2 model not installed
         return QueryResponse(question=question, success=False, error=str(e))
     except ValueError as e:
-        # Covers: questions that cannot be converted into SQL / bad AI output
-        return QueryResponse(
-            question=question,
-            success=False,
-            error=f"Could not understand the question well enough to build a query. ({e})",
-        )
+        # Covers: questions that cannot be converted into SQL (including
+        # questions about entities/tables not present in this database,
+        # e.g. "employees" when only "members" exists) / bad AI output
+        return QueryResponse(question=question, success=False, error=str(e))
     except Exception as e:
         # Catch-all so the API never crashes on an unexpected error
         return QueryResponse(
@@ -109,6 +107,11 @@ def process_query(request: QuestionRequest, db: Session = Depends(get_db)):
         )
 
     sql = ai_result["sql"]
+    # Note: this initial explanation (from ask_llama) describes what the
+    # SQL *does*. It's kept as a fallback for error responses below (e.g.
+    # if the query gets rejected or fails before we have real results to
+    # explain). On a successful run, it gets replaced in Step 6 with an
+    # explanation of the actual RESULTS instead.
     explanation = ai_result["explanation"]
 
     # ---- 3. Validate the generated SQL for safety ----------------------
@@ -147,7 +150,14 @@ def process_query(request: QuestionRequest, db: Session = Depends(get_db)):
             error=result_or_error,
         )
 
-    # ---- 6. Success! Return everything ----------------------------------
+    # ---- 6. Replace the explanation with one describing the RESULTS -------
+    # Instead of explaining the SQL, we now explain what the actual data
+    # returned means, in direct answer to the user's question.
+    result_explanation = summarize_data(question, result_or_error)
+    if result_explanation:
+        explanation = result_explanation
+
+    # ---- 7. Success! Return everything ----------------------------------
     return QueryResponse(
         question=question,
         sql=sql,

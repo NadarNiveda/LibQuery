@@ -46,10 +46,21 @@ STRICT RULES:
 3. Use ONLY the tables and columns listed in the schema above. Do not
    invent table or column names.
 4. Never modify the database in any way.
-5. Return your answer STRICTLY as a JSON object with exactly two keys:
-   "sql"          -> the generated SQL query as a single-line string
-   "explanation"  -> a short, plain-English explanation of what the query does
-6. Do not include markdown code fences, comments, or any text outside
+5. CRITICAL: If the question asks about an entity, table, or concept that
+   is NOT present in the schema above (for example "employees", "staff",
+   "authors table", "publishers", "fines", "reservations" — anything not
+   literally listed), do NOT substitute the closest-sounding table and do
+   NOT guess. Instead, set "sql" to an empty string "" and use
+   "explanation" to state clearly, in plain English, that this database
+   does not contain that information, naming what it DOES contain instead
+   (books, members, categories, borrow records).
+6. Return your answer STRICTLY as a JSON object with exactly two keys:
+   "sql"          -> the generated SQL query as a single-line string, or ""
+                      if the question cannot be answered from this schema
+   "explanation"  -> a short, plain-English explanation of what the query
+                      does, OR (if sql is "") why the question can't be
+                      answered from this database
+7. Do not include markdown code fences, comments, or any text outside
    the JSON object.
 
 USER QUESTION:
@@ -146,6 +157,107 @@ def ask_llama(question: str) -> dict:
     explanation = parsed.get("explanation", "").strip()
 
     if not sql:
-        raise ValueError("The AI did not return a SQL query.")
+        # The model deliberately left sql empty — this means the question
+        # asked about something not present in our schema (see rule 5 in
+        # build_prompt), e.g. "employees" when only "members" exists.
+        # Surface the model's own explanation as the error message.
+        raise ValueError(
+            explanation or
+            "This question doesn't match any information in the library "
+            "database (books, members, categories, or borrow records)."
+        )
 
     return {"sql": sql, "explanation": explanation or "No explanation was provided."}
+
+
+def summarize_data(question: str, data: list) -> str:
+    """
+    Sends the actual query RESULTS (not the SQL) back to Llama 3.2 and asks
+    for a short, plain-English summary of what the data shows, in direct
+    response to the user's original question.
+
+    This is called AFTER the query has been executed, so it can describe
+    real numbers/names from the result set (e.g. "3 books are currently
+    available: ...") rather than just describing what the query does.
+
+    If anything goes wrong here, an empty string is returned instead of
+    raising an error — a missing result summary should never break the
+    whole /query response, since the SQL/explanation/data are already valid.
+    """
+    if not data:
+        return "The query ran successfully but returned no matching rows."
+
+    # Limit how many rows we send back to the model — keeps the prompt small
+    # and the summary fast, even if the query returned hundreds of rows.
+    sample = data[:20]
+
+    prompt = f"""You are summarizing the result of a database query for a non-technical user.
+
+USER'S ORIGINAL QUESTION:
+"{question}"
+
+QUERY RESULT (JSON array, {len(data)} total row(s), showing up to 20 below):
+{json.dumps(sample, default=str)}
+
+Write a short, plain-English summary that answers the user's question
+directly, using this EXACT formatting style:
+- If the result is a single number or fact, answer in ONE short sentence
+  and nothing else.
+- If the result lists multiple items (books, members, etc.), the FIRST
+  line must be a one-sentence overview. Then each item must appear on
+  its OWN LINE, starting with a real newline character followed by "- ".
+  Never put more than one item on the same line, and never join items
+  with " - " in the middle of a sentence.
+
+Example of the required format for a list of 2 items:
+There are 2 items matching your question.
+- First item, with its key details here.
+- Second item, with its key details here.
+
+Rules:
+- Mention concrete figures, titles, or names from the data — never say
+  "the data shows" without stating what it actually shows.
+- Do not mention SQL, tables, columns, or databases.
+- Respond with ONLY the summary text in the exact format above — no JSON,
+  no markdown headers, no code fences.
+"""
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {"temperature": 0.2},
+    }
+
+    try:
+        response = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
+        if response.status_code != 200:
+            return ""
+        response_data = response.json()
+        summary = response_data.get("response", "").strip()
+        return normalize_bullet_formatting(summary)
+    except (requests.exceptions.RequestException, ValueError):
+        # Network issue, timeout, or bad JSON — just skip the summary
+        # rather than failing the whole request.
+        return ""
+
+
+def normalize_bullet_formatting(text: str) -> str:
+    """
+    Safety net for when the model ignores the formatting instructions and
+    runs bullet items together on one line (e.g. "... 9876543210. - Niveda
+    Pillai, ...") instead of putting each on its own line.
+
+    This converts any ". - " or ".- " pattern that appears mid-sentence
+    into a real newline followed by "- ", so the frontend's bullet-list
+    parser (which looks for lines starting with "- ") renders it correctly
+    even when the AI's raw output doesn't use real newlines.
+    """
+    if not text:
+        return text
+
+    # Turn ". - Something" (period, optional space, hyphen, space) into
+    # a real line break before the bullet, wherever it occurs in the text.
+    normalized = re.sub(r"\.\s*-\s+", ".\n- ", text)
+
+    return normalized.strip()

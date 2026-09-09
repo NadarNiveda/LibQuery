@@ -50,10 +50,45 @@ function showSql(sql) {
   sqlCard.classList.remove("hidden");
 }
 
-// Renders the plain-English explanation.
+// Safety net: if the backend text still has bullets run together inline
+// (e.g. "...9876543210. - Niveda Pillai, ...") instead of real newlines,
+// convert those patterns into actual line breaks before parsing.
+function normalizeBulletFormatting(text) {
+  return text.replace(/\.\s*-\s+/g, ".\n- ");
+}
+
+// Renders the explanation (describes the RESULTS, not the SQL) with real
+// formatting: consecutive "- " lines become an actual bullet list, other
+// lines become paragraphs.
 function showExplanation(explanation) {
-  if (!explanation) return;
-  explanationOutput.textContent = explanation;
+  if (!explanation || !explanation.trim()) return;
+
+  explanationOutput.innerHTML = "";
+
+  const normalized = normalizeBulletFormatting(explanation.trim());
+  const lines = normalized.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  let currentList = null;
+
+  lines.forEach((line) => {
+    if (line.startsWith("- ") || line.startsWith("• ")) {
+      // Bullet line — start a new <ul> if one isn't already open.
+      if (!currentList) {
+        currentList = document.createElement("ul");
+        explanationOutput.appendChild(currentList);
+      }
+      const li = document.createElement("li");
+      li.textContent = line.replace(/^[-•]\s+/, "");
+      currentList.appendChild(li);
+    } else {
+      // Regular sentence — close any open list, start a new paragraph.
+      currentList = null;
+      const p = document.createElement("p");
+      p.textContent = line;
+      explanationOutput.appendChild(p);
+    }
+  });
+
   explanationCard.classList.remove("hidden");
 }
 
@@ -129,14 +164,16 @@ async function generateQuery() {
 
     const result = await response.json();
 
-    // Always show SQL/explanation if they were generated, even on failure,
-    // so the user can see what the AI attempted.
+    // Show SQL if it was generated, even on failure, so the user can see
+    // what the AI attempted. The explanation (results-based) only shows
+    // up on success, since there are no results to explain otherwise.
     showSql(result.sql);
-    showExplanation(result.explanation);
 
     if (result.success) {
+      showExplanation(result.explanation);
       showResults(result.data);
     } else {
+      showExplanation(result.explanation); // may still hold the query-level explanation
       showError(result.error || "An unknown error occurred.");
     }
   } catch (err) {
