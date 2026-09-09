@@ -239,7 +239,6 @@ table#results-table tr:hover td {
 }
 
 .error-card .card-label { color: var(--error); }
-
 #error-message {
   margin: 0;
   color: var(--error);

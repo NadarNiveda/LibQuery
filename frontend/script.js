@@ -188,7 +188,6 @@ async function generateQuery() {
 }
 
 generateBtn.addEventListener("click", generateQuery);
-
 // Allow Ctrl+Enter / Cmd+Enter inside the textarea to trigger generation.
 questionInput.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
