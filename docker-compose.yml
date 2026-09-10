@@ -22,6 +22,12 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: library_db
+    # Port 3307 (not 3306!) is exposed to the HOST only for your own
+    # debugging (e.g. connecting with MySQL Workbench). 3306 is skipped
+    # because it usually clashes with a local MySQL install already
+    # running on your machine. This mapping has no effect on how the
+    # api container talks to mysql — that always uses the internal
+    # Docker network on port 3306 regardless of this host-side mapping.
     ports:
       - "3307:3306"
     volumes:
@@ -48,6 +54,18 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD}@mysql/library_db
       OLLAMA_URL: http://ollama:11434/api/generate
+
+  frontend:
+    image: nginx:alpine
+    container_name: libquery-frontend
+    ports:
+      - "5500:80"
+    volumes:
+      # Serves your existing frontend/ folder as-is — no build step, no
+      # extra Dockerfile needed, just Nginx handing out static files.
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - api
 
 volumes:
   ollama_data:
