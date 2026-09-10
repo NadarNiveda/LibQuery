@@ -1,15 +1,3 @@
-"""
-database.py
-------------
-Handles the SQLAlchemy connection to MySQL and provides:
-
-1. A reusable database session (get_db).
-2. A text description of the database schema, which is fed to the AI
-   model so it knows exactly which tables/columns it is allowed to use.
-3. A helper function to actually run a validated SQL SELECT query and
-   return the results as a list of dictionaries.
-"""
-
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError

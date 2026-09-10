@@ -1,17 +1,3 @@
-"""
-sql_validator.py
------------------
-Security module that checks AI-generated SQL before it is ever executed.
-
-Rules enforced:
-1. The query must be a SELECT statement (read-only).
-2. The query must NOT contain any dangerous keywords such as
-   INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE, REPLACE,
-   GRANT, or REVOKE — even if they appear inside a subquery or comment.
-3. The query must not contain multiple statements separated by ';'
-   (this prevents "SELECT ...; DROP TABLE ..." style injection).
-"""
-
 import re
 
 # Keywords that must NEVER appear in a query we execute.

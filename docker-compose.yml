@@ -1,0 +1,54 @@
+# docker-compose.yml
+# -------------------
+# Place this file at the ROOT of your libquery folder, next to Dockerfile.
+#
+# NOTE: your seed file is app/database.sql (not database/create_database.sql),
+# so the volume path below points there instead.
+
+services:
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  mysql:
+    image: mysql:8.0
+    container_name: libquery-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: library_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Your seed file lives at app/database.sql — mounted so MySQL
+      # runs it automatically the FIRST time it starts.
+      - ./app/database.sql:/docker-entrypoint-initdb.d/database.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: libquery-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      ollama:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD}@mysql/library_db
+      OLLAMA_URL: http://ollama:11434/api/generate
+
+volumes:
+  ollama_data:
+  mysql_data:

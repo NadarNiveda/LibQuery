@@ -1,16 +1,3 @@
-"""
-ollama_client.py
------------------
-Handles all communication with the locally running Ollama server.
-
-Ollama must already be installed and running the llama3.2 model:
-    ollama pull llama3.2
-    ollama run llama3.2   (or it will auto-start when called via API)
-
-This module sends the user's natural-language question (plus the
-database schema) to Llama 3.2 and asks it to return SQL + an explanation.
-"""
-
 import json
 import re
 import requests

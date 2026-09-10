@@ -1,15 +1,3 @@
--- =============================================================
--- LibQuery: Database creation and sample data script
--- =============================================================
--- How to run:
---   1. Open MySQL Workbench or the mysql command-line client.
---   2. Run this entire file (or copy-paste it) to create the
---      library_db database with sample data.
---
---   Command line example:
---     mysql -u root -p < create_database.sql
--- =============================================================
-
 -- Create the database (drop first only if you want a clean slate)
 CREATE DATABASE IF NOT EXISTS library_db;
 USE library_db;

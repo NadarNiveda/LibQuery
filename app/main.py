@@ -1,17 +1,3 @@
-"""
-main.py
---------
-Entry point for the LibQuery FastAPI backend.
-
-Run this with (from inside the 'app' folder):
-    uvicorn main:app --reload
-
-Endpoints:
-    GET  /        -> confirms the API is running
-    POST /query   -> takes a natural-language question and returns SQL,
-                      an explanation, and (if safe) the query results
-"""
-
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
